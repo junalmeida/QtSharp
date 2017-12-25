@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using CppSharp;
 using CppSharp.Utils;
@@ -245,11 +244,11 @@ namespace QtSharp.CLI
                 var module = Path.GetFileNameWithoutExtension(modules[i]);
                 if (debug && module != null && !module.EndsWith("d", StringComparison.Ordinal))
                 {
-                    modules.Remove(module + Path.GetExtension(modules[i]));                    
+                    modules.Remove($"{module}{Path.GetExtension(modules[i])}");
                 }
                 else
                 {
-                    modules.Remove(module + "d" + Path.GetExtension(modules[i]));                    
+                    modules.Remove($"{module}d{Path.GetExtension(modules[i])}");
                 }
             }
             return modules;

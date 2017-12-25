@@ -200,7 +200,29 @@ namespace QtSharp
                 }
                 else
                 {
-                    this.documentation.DocumentFunction(function);
+                    if (function.Parameters.Any(p => p.Kind == ParameterKind.Extension))
+                    {
+                        Function instantiatedFrom = function.OriginalFunction.InstantiatedFrom;
+                        if (function.OriginalFunction.Comment == null && instantiatedFrom != null)
+                        {
+                            this.DocumentFunction(instantiatedFrom);
+                            function.Comment = instantiatedFrom.Comment;
+                            List<Parameter> regularParameters = (from p in function.Parameters
+                                                                 where p.Kind == ParameterKind.Regular
+                                                                 select p).ToList();
+                            List<Parameter> originalRegularParameters = (from p in instantiatedFrom.Parameters
+                                                                         where p.Kind == ParameterKind.Regular
+                                                                         select p).ToList();
+                            for (int i = 0; i < regularParameters.Count; i++)
+                            {
+                                regularParameters[i].Name = originalRegularParameters[i].Name;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        this.documentation.DocumentFunction(function);
+                    }
                 }
                 if (function.Comment != null)
                 {

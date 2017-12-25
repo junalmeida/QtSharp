@@ -21,9 +21,15 @@ namespace QtSharp
             var enumType = GetEnumType(ctx.Type);
             if (enumType == null)
             {
-                var specializationType = (TemplateSpecializationType) ctx.Type;
-                return $@"{specializationType.Template.Name}<{
-                           string.Join(", ", specializationType.Arguments.Select(a => a.Type.Type))}>";
+                var specializationType = ctx.Type as TemplateSpecializationType;
+                if (specializationType != null)
+                {
+                    return $@"{specializationType.Template.Name}<{
+                               string.Join(", ", specializationType.Arguments.Select(a => a.Type.Type))}>";
+                }
+                var template = (Class) ((TagType) ctx.Type).Declaration;
+                return $@"{template.Name}<{
+                           string.Join(", ", template.TemplateParameters.Select(p => p.Name))}>";
             }
             return this.CSharpSignatureType(ctx).ToString();
         }
@@ -60,7 +66,7 @@ namespace QtSharp
             if (templateSpecializationType != null)
                 classTemplateSpecialization = templateSpecializationType.GetClassTemplateSpecialization();
             else
-                classTemplateSpecialization = (ClassTemplateSpecialization) ((TagType) type).Declaration;
+                classTemplateSpecialization = ((TagType) type).Declaration as ClassTemplateSpecialization;
             if (classTemplateSpecialization == null)
             {
                 return null;

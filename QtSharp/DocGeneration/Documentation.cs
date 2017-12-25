@@ -333,8 +333,11 @@ namespace QtSharp.DocGeneration
                             {
                                 foreach (var specialization in ((Class) function.Namespace).Specializations)
                                 {
-                                    var specializedFunction = specialization.Methods.First(m => m.InstantiatedFrom == function);
-                                    specializedFunction.Parameters.Where(p => p.Kind == ParameterKind.Regular).ElementAt(i).Name = param;
+                                    var specializedFunction = specialization.Methods.FirstOrDefault(m => m.InstantiatedFrom == function);
+                                    if (specializedFunction != null)
+                                    {
+                                        specializedFunction.Parameters.Where(p => p.Kind == ParameterKind.Regular).ElementAt(i).Name = param;
+                                    }
                                 }
                             }
                             i++;

@@ -55,23 +55,6 @@ namespace QtSharp
                 method.ExplicitlyIgnore();
             }
 
-            foreach (var template in lib.FindDecl<ClassTemplate>("QList"))
-            {
-                var qListQVariant = template.Specializations.FirstOrDefault(
-                    s =>
-                    {
-                        var type = s.Arguments[0].Type.Type;
-                        if (type == null)
-                            return false;
-                        Class @class;
-                        return s.Arguments[0].Type.Type.TryGetClass(out @class) && @class.Name == "QVariant";
-                    });
-                if (qListQVariant != null)
-                {
-                    qListQVariant.Methods.First(m => m.OriginalName == "toSet").ExplicitlyIgnore();
-                }
-            }
-
             // HACK: work around https://github.com/mono/CppSharp/issues/594
             lib.FindCompleteClass("QGraphicsItem").FindEnum("Extension").Access = AccessSpecifier.Public;
             lib.FindCompleteClass("QAbstractSlider").FindEnum("SliderChange").Access = AccessSpecifier.Public;
@@ -94,15 +77,15 @@ namespace QtSharp
             }
         }
 
-        public void Postprocess(Driver driver, ASTContext lib)
+        public void Postprocess(Driver driver, ASTContext ctx)
         {
             new ClearCommentsPass().VisitASTContext(driver.Context.ASTContext);
-            var modules = this.qtInfo.LibFiles.Select(l => GetModuleNameFromLibFile(l));
+            var modules = this.qtInfo.LibFiles.Select(GetModuleNameFromLibFile);
             var s = System.Diagnostics.Stopwatch.StartNew();
             new GetCommentsFromQtDocsPass(this.qtInfo.Docs, modules).VisitASTContext(driver.Context.ASTContext);
-            System.Console.WriteLine("Documentation done in: {0}", s.Elapsed);
+            Console.WriteLine("Documentation done in: {0}", s.Elapsed);
 
-            var qChar = lib.FindCompleteClass("QChar");
+            var qChar = ctx.FindCompleteClass("QChar");
             var op = qChar.FindOperator(CXXOperatorKind.ExplicitConversion)
                 .FirstOrDefault(o => o.Parameters[0].Type.IsPrimitiveType(PrimitiveType.Char));
             if (op != null)
@@ -113,7 +96,7 @@ namespace QtSharp
                 op.ExplicitlyIgnore();
             // QString is type-mapped to string so we only need two methods for the conversion
             // go through the methods a second time to ignore free operators moved to the class
-            var qString = lib.FindCompleteClass("QString");
+            var qString = ctx.FindCompleteClass("QString");
             foreach (var method in qString.Methods.Where(
                 m => !m.Ignore && m.OriginalName != "utf16" && m.OriginalName != "fromUtf16"))
             {
@@ -137,11 +120,12 @@ namespace QtSharp
             driver.ParserOptions.TargetTriple = this.qtInfo.Target;
             driver.ParserOptions.Abi = CppAbi.Itanium;
             driver.ParserOptions.AddDefines("__float128=void");
+            driver.ParserOptions.UnityBuild = true;
             driver.Options.GeneratorKind = GeneratorKind.CSharp;
-            driver.Options.UnityBuild = true;
             driver.Options.CheckSymbols = true;
             driver.Options.CompileCode = true;
             driver.Options.GenerateDefaultValuesForArguments = true;
+            driver.Options.GenerateClassTemplates = true;
             driver.Options.MarshalCharAsManagedChar = true;
             driver.Options.CommentKind = CommentKind.BCPLSlash;
 
@@ -260,7 +244,7 @@ namespace QtSharp
             }
             else
             {
-                DeclarationContext declarationContext = declaration as DeclarationContext;
+                var declarationContext = declaration as DeclarationContext;
                 if (declarationContext != null)
                 {
                     IgnorePrivateDeclarations(declarationContext);
@@ -282,11 +266,11 @@ namespace QtSharp
                 qtModules += "lib";
             }
 
-            proBuilder.Append($"QT += {qtModules}\n");
+            proBuilder.Append("QT += ").Append(qtModules).Append("\n");
             proBuilder.Append("CONFIG += c++11\n");
-            proBuilder.Append($"TARGET = {e.Module.SymbolsLibraryName}\n");
+            proBuilder.Append("TARGET = ").Append(e.Module.SymbolsLibraryName).Append("\n");
             proBuilder.Append("TEMPLATE = lib\n");
-            proBuilder.Append($"SOURCES += {Path.ChangeExtension(pro, "cpp")}\n");
+            proBuilder.Append("SOURCES += ").Append(Path.ChangeExtension(pro, "cpp")).Append("\n");
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 proBuilder.Append("LIBS += -loleaut32 -lole32");
