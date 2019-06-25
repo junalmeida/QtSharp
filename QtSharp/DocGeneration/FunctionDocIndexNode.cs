@@ -6,10 +6,10 @@ namespace QtSharp.DocGeneration
     {
         public FunctionDocIndexNode()
         {
-            this.ParametersModifiers = new List<string>();
+            this.ParametersTypes = new List<string>();
         }
 
         public string Access { get; set; }
-        public List<string> ParametersModifiers { get; private set; }
+        public List<string> ParametersTypes { get; private set; }
     }
 }

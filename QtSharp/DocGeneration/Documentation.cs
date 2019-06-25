@@ -115,7 +115,7 @@ namespace QtSharp.DocGeneration
                 {
                     if (xmlSubReader.NodeType == XmlNodeType.Element && xmlSubReader.Name == "parameter")
                     {
-                        functionDocumentationNode.ParametersModifiers.Add(xmlSubReader.GetAttribute("left"));
+                        functionDocumentationNode.ParametersTypes.Add(xmlSubReader.GetAttribute("type"));
                     }
                 }
             }
@@ -151,8 +151,15 @@ namespace QtSharp.DocGeneration
 
         private void CollectMembersDocumentation(HtmlNode documentRoot, string docFile)
         {
-            var members = new Dictionary<string, List<MemberDocumentationNode>>();
-            this.membersDocumentation.Add(docFile, members);
+            Dictionary<string, List<MemberDocumentationNode>> members;
+            if (this.membersDocumentation.ContainsKey(docFile))
+            {
+                members = this.membersDocumentation[docFile];
+            }
+            else
+            {
+                this.membersDocumentation[docFile] = members = new Dictionary<string, List<MemberDocumentationNode>>();
+            }
             foreach (var fn in documentRoot.Descendants("h3").Where(
                 n =>
                 {
@@ -267,10 +274,12 @@ namespace QtSharp.DocGeneration
             var functions = this.functionNodes[nodeKey];
             var unit = function.OriginalNamespace.TranslationUnit;
             var location = unit.FileName;
+            var @params = function.Parameters.Where(p => p.Kind == ParameterKind.Regular).ToList();
             FunctionDocIndexNode node = null;
             var nodes = functions.FindAll(
                 f => f.Location == location &&
-                    (f.LineNumber == lineStart || f.LineNumber == lineEnd));
+                    (f.LineNumber == lineStart || f.LineNumber == lineEnd) &&
+                    f.ParametersTypes.Count(p => p != "...") == @params.Count);
             // incredible but we actually have a case of different functions with the same name in headers with the same name at the same line
             if (nodes.Count > 0)
             {
@@ -283,7 +292,6 @@ namespace QtSharp.DocGeneration
                     node = nodes.Find(n => n.FullName == function.QualifiedOriginalName);
                 }
             }
-            var @params = function.Parameters.Where(p => p.Kind == ParameterKind.Regular).ToList();
             int realParamsCount = @params.Count(p => !string.IsNullOrWhiteSpace(p.OriginalName) || p.DefaultArgument == null);
             // functions can have different line numbers because of #defines
             if (node == null || node.HRef == null)
@@ -291,7 +299,7 @@ namespace QtSharp.DocGeneration
                 nodes = functions.FindAll(
                     f => CheckLocation(f.Location, location) &&
                          (f.FullName == function.QualifiedOriginalName || f.Name == function.OriginalName) &&
-                         f.Access != "private" && f.ParametersModifiers.Count == realParamsCount);
+                         f.Access != "private" && f.ParametersTypes.Count == realParamsCount);
                 // HACK: work around https://bugreports.qt.io/browse/QTBUG-53994
                 if (nodes.Count == 1)
                 {
@@ -301,7 +309,7 @@ namespace QtSharp.DocGeneration
                 {
                     var paramTypes = @params.Select(p => p.Type.ToString()).ToList();
                     node = nodes.Find(
-                        f => f.ParametersModifiers.SequenceEqual(paramTypes, new TypeInIndexEqualityComparer()));
+                        f => f.ParametersTypes.SequenceEqual(paramTypes, new TypeInIndexEqualityComparer()));
                 }
             }
             if (node != null && node.HRef != null)
@@ -318,17 +326,23 @@ namespace QtSharp.DocGeneration
                         var i = 0;
                         // HACK: work around https://bugreports.qt.io/browse/QTBUG-53941
                         if (function.Namespace.Name == "QByteArray" &&
-                            function.OriginalName == "qCompress" && @params.Count == 2)
+                            (function.OriginalName == "qCompress" && @params.Count == 2) ||
+                            (function.OriginalName == "qUncompress" && @params.Count == 1))
                         {
                             docs = this.membersDocumentation[file][key + "-hack"];
                         }
+                        var used = new HashSet<string>();
                         foreach (Match match in regexParameters.Matches(docs[0].InnerHtml))
                         {
                             // variadic and void "parameters" are invalid
                             if (function.IsVariadic && @params.Count == i || match.Groups[1].Value == "void")
                                 break;
-                            var param = csharpSources.SafeIdentifier(match.Groups[1].Value);
-                            @params[i].Name = param;
+                            var param = CSharpSources.SafeIdentifier(match.Groups[1].Value);
+                            if (used.Contains(param))
+                            {
+                                param += i;
+                            }
+                            used.Add(@params[i].Name = param);
                             if (function.IsDependent && function is Method && function.Namespace.IsDependent)
                             {
                                 foreach (var specialization in ((Class) function.Namespace).Specializations)
@@ -574,7 +588,7 @@ namespace QtSharp.DocGeneration
         {
             var node = this.enumNodes.Find(
                 c => c.Location == @enum.TranslationUnit.FileName && c.Name == @enum.OriginalName);
-            if (node != null)
+            if (node != null && node.HRef != null)
             {
                 var link = node.HRef.Split('#');
                 var file = link[0];
@@ -640,7 +654,7 @@ namespace QtSharp.DocGeneration
             var node = this.variableNodes.Find(
                 f => f.Location == variable.TranslationUnit.FileName &&
                      (f.LineNumber == lineStart || f.LineNumber == lineEnd));
-            if (node != null)
+            if (node != null && node.HRef != null)
             {
                 var link = node.HRef.Split('#');
                 var file = link[0];

@@ -84,7 +84,7 @@ namespace QtSharp
 
         public override bool VisitFunctionDecl(Function function)
         {
-            if (!base.VisitFunctionDecl(function) || function.TranslationUnit.IsSystemHeader)
+            if (!base.VisitFunctionDecl(function) || function.TranslationUnit.IsSystemHeader || function.IsImplicit)
             {
                 return false;
             }

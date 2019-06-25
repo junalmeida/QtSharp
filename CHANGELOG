@@ -1,3 +1,7 @@
+0.7.5 - 25.6.2019
+Added:
+- Bindings for Qt 5.12.4 LTS
+
 0.7.4 - 25.12.2017
 Added:
 - Partial support for templates - only specialisations from the module containing the template.

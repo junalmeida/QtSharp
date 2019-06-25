@@ -10,7 +10,6 @@ using CppSharp.AST.Extensions;
 using CppSharp.Generators;
 using CppSharp.Passes;
 using CppSharp.Utils;
-using CppAbi = CppSharp.Parser.AST.CppAbi;
 
 namespace QtSharp
 {
@@ -118,9 +117,8 @@ namespace QtSharp
             driver.ParserOptions.MicrosoftMode = false;
             driver.ParserOptions.NoBuiltinIncludes = true;
             driver.ParserOptions.TargetTriple = this.qtInfo.Target;
-            driver.ParserOptions.Abi = CppAbi.Itanium;
-            driver.ParserOptions.AddDefines("__float128=void");
             driver.ParserOptions.UnityBuild = true;
+            driver.ParserOptions.SkipPrivateDeclarations = false;
             driver.Options.GeneratorKind = GeneratorKind.CSharp;
             driver.Options.CheckSymbols = true;
             driver.Options.CompileCode = true;
@@ -182,7 +180,6 @@ namespace QtSharp
                 {
                     module.Headers.Insert(0, "guiddef.h");
                     module.CodeFiles.Add(Path.Combine(dir, "QObject.cs"));
-                    module.CodeFiles.Add(Path.Combine(dir, "QChar.cs"));
                     module.CodeFiles.Add(Path.Combine(dir, "QEvent.cs"));
                 }
             }
@@ -267,6 +264,7 @@ namespace QtSharp
             }
 
             proBuilder.Append("QT += ").Append(qtModules).Append("\n");
+            proBuilder.Append("QMAKE_CXXFLAGS += -Wa,-mbig-obj\n");
             proBuilder.Append("CONFIG += c++11\n");
             proBuilder.Append("TARGET = ").Append(e.Module.SymbolsLibraryName).Append("\n");
             proBuilder.Append("TEMPLATE = lib\n");

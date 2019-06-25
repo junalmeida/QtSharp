@@ -102,7 +102,7 @@ namespace QtSharp
                         block.WriteLine("/// </summary>");
                     }
                     var finalName = char.ToUpperInvariant(@event.Name[0]) + @event.Name.Substring(1);
-                    if (@event.Namespace.Declarations.Exists(d => d != @event && d.Name == finalName))
+                    if (@event.Namespace.Declarations.Any(d => d != @event && d.Name == finalName))
                     {
                         finalName += "Signal";
                     }
@@ -192,7 +192,7 @@ namespace QtSharp
                     {
                         method.ExplicitlyIgnore();
                     }
-                    @class.Events.Add(@event);
+                    @class.Declarations.Add(@event);
                     this.events.Add(@event);
                     return;
                 }

@@ -13,25 +13,20 @@ namespace QtSharp
 
         public override Type CSharpSignatureType(TypePrinterContext ctx)
         {
-            return GetEnumType(ctx.Type);
-        }
-
-        public override string CSharpSignature(TypePrinterContext ctx)
-        {
             var enumType = GetEnumType(ctx.Type);
             if (enumType == null)
             {
                 var specializationType = ctx.Type as TemplateSpecializationType;
                 if (specializationType != null)
                 {
-                    return $@"{specializationType.Template.Name}<{
-                               string.Join(", ", specializationType.Arguments.Select(a => a.Type.Type))}>";
+                    return new UnsupportedType($@"{specializationType.Template.Name}<{
+                        string.Join(", ", specializationType.Arguments.Select(a => a.Type.Type))}>");
                 }
                 var template = (Class) ((TagType) ctx.Type).Declaration;
-                return $@"{template.Name}<{
-                           string.Join(", ", template.TemplateParameters.Select(p => p.Name))}>";
+                return new UnsupportedType($@"{template.Name}<{
+                    string.Join(", ", template.TemplateParameters.Select(p => p.Name))}>");
             }
-            return this.CSharpSignatureType(ctx).ToString();
+            return GetEnumType(ctx.Type);
         }
 
         public override void CSharpMarshalToNative(CSharpMarshalContext ctx)
@@ -56,7 +51,7 @@ namespace QtSharp
             }
         }
 
-        public override bool IsIgnored => Type != null ? Type.IsDependent : Declaration.IsDependent;
+        public override bool IsIgnored => Type.IsDependent;
 
         private static Type GetEnumType(Type mappedType)
         {

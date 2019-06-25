@@ -9,13 +9,14 @@ namespace QtSharp
     [TypeMap("QString")]
     public class QString : TypeMap
     {
-        public override string CSharpSignature(TypePrinterContext ctx)
+        public override Type CSharpSignatureType(TypePrinterContext ctx)
         {
             if (ctx.Kind == TypePrinterContextKind.Native)
             {
-                return $"QtCore.QString.{Helpers.InternalStruct}{(ctx.Type.IsAddress() ? "*" : string.Empty)}";
+                return new CustomType($@"QtCore.QString.{
+                    Helpers.InternalStruct}{(ctx.Type.IsAddress() ? "*" : string.Empty)}");
             }
-            return "string";
+            return new CILType(typeof(string));
         }
 
         public override void CSharpMarshalToNative(CSharpMarshalContext ctx)

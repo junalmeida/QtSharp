@@ -62,21 +62,23 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Cecil, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.9.6.4\lib\net45\Mono.Cecil.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="CppSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CppSharp.0.10.0\lib\CppSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Mdb, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.9.6.4\lib\net45\Mono.Cecil.Mdb.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="CppSharp.AST, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CppSharp.0.10.0\lib\CppSharp.AST.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Pdb, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.9.6.4\lib\net45\Mono.Cecil.Pdb.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="CppSharp.Generator, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CppSharp.0.10.0\lib\CppSharp.Generator.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Rocks, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.9.6.4\lib\net45\Mono.Cecil.Rocks.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="CppSharp.Parser, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CppSharp.0.10.0\lib\CppSharp.Parser.dll</HintPath>
+    </Reference>
+    <Reference Include="CppSharp.Parser.CLI, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\CppSharp.0.10.0\lib\CppSharp.Parser.CLI.dll</HintPath>
+    </Reference>
+    <Reference Include="CppSharp.Runtime, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CppSharp.0.10.0\lib\CppSharp.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -93,30 +95,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\build\vs2015\projects\CppSharp.Parser.CLI.vcxproj">
-      <Project>{c75eb680-33c0-938e-bc2d-da40288eca4d}</Project>
-      <Name>CppSharp.Parser.CLI</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\AST\CppSharp.AST.csproj">
-      <Project>{bc4c5c41-a8af-ebe5-5135-249c3d77b768}</Project>
-      <Name>CppSharp.AST</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\Core\CppSharp.csproj">
-      <Project>{c600c309-b2cd-1d15-dbe6-0bbdc71253a3}</Project>
-      <Name>CppSharp</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\Generator\CppSharp.Generator.csproj">
-      <Project>{1bd1fec4-07b5-bf1a-7015-ba6d5c18aa9c}</Project>
-      <Name>CppSharp.Generator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\Parser\CppSharp.Parser.csproj">
-      <Project>{c105fd61-2d91-6a26-36a2-ed1aa2acc626}</Project>
-      <Name>CppSharp.Parser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\Runtime\CppSharp.Runtime.csproj">
-      <Project>{189ff169-0498-10bc-2dca-f5401922f0c7}</Project>
-      <Name>CppSharp.Runtime</Name>
-    </ProjectReference>
     <ProjectReference Include="..\QtSharp\QtSharp.csproj">
       <Project>{861046E1-DA11-4229-B9B6-45426E7A723E}</Project>
       <Name>QtSharp</Name>
@@ -126,13 +104,14 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\build\vs2015\lib\Release_x64\CppSharp.CppParser.dll">
-      <Link>CppSharp.CppParser.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Baseclass.Contrib.Nuget.Output.2.4.3\build\Baseclass.Contrib.Nuget.Output.targets" Condition="Exists('..\packages\Baseclass.Contrib.Nuget.Output.2.4.3\build\Baseclass.Contrib.Nuget.Output.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Baseclass.Contrib.Nuget.Output.2.4.3\build\Baseclass.Contrib.Nuget.Output.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Baseclass.Contrib.Nuget.Output.2.4.3\build\Baseclass.Contrib.Nuget.Output.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
