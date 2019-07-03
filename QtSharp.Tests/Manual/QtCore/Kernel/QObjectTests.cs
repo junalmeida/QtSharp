@@ -36,19 +36,23 @@ namespace QtSharp.Tests.Manual.QtCore.Kernel
         [Test]
         public void TestParentChildConstructor()
         {
-            var o = new QObject(_qObject) { ObjectName = "Big" };
-            var list = new QList<QObject>();
-            list.Append(o);
-            var el = list[0];
-            //Assert.That(el.ObjectName, Is.EqualTo(o.ObjectName));
-            var c = new QObject(o);
-            c.ObjectName = "Child";
-            //o.Children.Append(c);
-            var cc = o.Children.At(0);
-            Assert.That(cc.ObjectName, Is.EqualTo(c.ObjectName));
-
-            // TODO
-            //Assert.IsTrue(_qObject.Children.Contains(o));
+            using (var stringList = new QStringList())
+            {
+                stringList.Append("test");
+                Assert.That(stringList.At(0), Is.EqualTo("test"));
+            }
+            using (var o = new QObject(_qObject) { ObjectName = "Big" })
+            {
+                var list = new QList<QObject>();
+                list.Append(o);
+                var el = list[0];
+                Assert.That(el.ObjectName, Is.EqualTo(o.ObjectName));
+                var c = new QObject(o);
+                c.ObjectName = "Child";
+                var cc = o.Children.At(0);
+                Assert.That(cc.ObjectName, Is.EqualTo(c.ObjectName));
+                Assert.IsTrue(_qObject.Children.Contains(o));
+            }
         }
 
         [Test]
@@ -116,7 +120,6 @@ namespace QtSharp.Tests.Manual.QtCore.Kernel
         // Todo Add Disconnect
 
         #region DumpObjectInfo
-        [Ignore("How to test?")]
         [Test]
         public void TestDumpObjectInfo()
         {
@@ -125,7 +128,6 @@ namespace QtSharp.Tests.Manual.QtCore.Kernel
         #endregion
 
         #region DumpObjectTree
-        [Ignore("How to test?")]
         [Test]
         public void TestDumpObjectTree()
         {

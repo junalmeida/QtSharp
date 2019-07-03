@@ -45,6 +45,7 @@ namespace QtSharp
 
             // QString is type-mapped to string so we only need two methods for the conversion
             var qString = lib.FindCompleteClass("QString");
+            qString.HasNonTrivialCopyConstructor = false;
             foreach (var @class in qString.Declarations)
             {
                 @class.ExplicitlyIgnore();

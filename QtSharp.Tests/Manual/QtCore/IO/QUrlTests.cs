@@ -69,7 +69,13 @@ namespace QtSharp.Tests.Manual.QtCore.IO
         [Test]
         public void TestAdjusted()
         {
-            throw new AssertionException("Not implemented!");
+            using (var n = new QUrl("ftp://tray:5uQQo_f@ftp.example.com:2021?58#question13"))
+            {
+                using (var a = n.Adjusted(new QUrlTwoFlags<QUrl.UrlFormattingOption, QUrl.ComponentFormattingOption>(QUrl.ComponentFormattingOption.PrettyDecoded)))
+                {
+                    Assert.AreEqual(n, a);
+                }
+            }
         }
 
         [Test]
@@ -186,7 +192,6 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             Assert.IsTrue(u.IsLocalFile);
         }
 
-        [Ignore("Bug!")]
         [Test]
         public void TestIsParentOf()
         {
@@ -211,9 +216,8 @@ namespace QtSharp.Tests.Manual.QtCore.IO
         {
             using (var n = new QUrl("ftp://tray:5uQQo_f@ftp.example.com:2021?58#question13"))
             {
+                Assert.IsTrue(n.Matches(n, new QUrlTwoFlags<QUrl.UrlFormattingOption, QUrl.ComponentFormattingOption>(QUrl.ComponentFormattingOption.PrettyDecoded)));
             }
-
-            throw new AssertionException("Not implemented!");
         }
 
         [Test]
@@ -396,11 +400,8 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             baseUrl.SetPassword("5uQQo_f2");
             baseUrl.SetPath("/pub/something/");
             baseUrl.SetPort(2022);
-            baseUrl.SetUrl("");
 
-            throw new AssertionException("Url() not implemented!");
-
-            //Assert.AreEqual(2022, baseUrl.Url());
+            Assert.AreEqual("ftp://tray:5uQQo_f2@ftp.example.com:2022/pub/something/##question13", baseUrl.Url());
         }
 
         [Test]
@@ -414,7 +415,6 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             baseUrl.SetUserInfo("tray2:5uQQo_f2");
             baseUrl.SetPath("/pub/something/");
             baseUrl.SetPort(2022);
-            baseUrl.SetUrl("");
 
             Assert.AreEqual("tray2", baseUrl.UserName());
             Assert.AreEqual("5uQQo_f2", baseUrl.Password());
@@ -432,7 +432,6 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             baseUrl.SetUserName("tray2");
             baseUrl.SetPath("/pub/something/");
             baseUrl.SetPort(2022);
-            baseUrl.SetUrl("");
 
             Assert.AreEqual("tray2", baseUrl.UserName());
         }
@@ -450,9 +449,7 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             baseUrl.SetPort(2022);
             baseUrl.Swap(new QUrl("llll"));
 
-            throw new AssertionException("Url() not implemented!");
-
-            //Assert.AreEqual(2022, baseUrl.Url());
+            Assert.AreEqual("llll", baseUrl.Url());
         }
 
         [Test]
@@ -520,7 +517,6 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             baseUrl.SetUserName("tray2");
             baseUrl.SetPath("/pub/something/");
             baseUrl.SetPort(2022);
-            baseUrl.SetUrl("");
 
             Assert.AreEqual(".com", baseUrl.TopLevelDomain());
         }
@@ -538,8 +534,7 @@ namespace QtSharp.Tests.Manual.QtCore.IO
             baseUrl.SetPort(2022);
             baseUrl.SetUrl("");
 
-            throw new AssertionException("Url() not implemented!");
-            //Assert.AreEqual(".com", baseUrl.Url());
+            Assert.AreEqual("", baseUrl.Url());
         }
 
         [Test]
@@ -561,10 +556,9 @@ namespace QtSharp.Tests.Manual.QtCore.IO
         [Test]
         public void TestEqualWithStringOperator()
         {
-            //QUrl n = _qUrl.Url();
-            throw new AssertionException("Url() not implemented!");
+            QUrl n = this.qUrl.Url();
 
-            //Assert.AreEqual(n, _qUrl);           
+            Assert.AreEqual(n, this.qUrl);
         }
 
         [Test]

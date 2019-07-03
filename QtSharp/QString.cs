@@ -52,8 +52,8 @@ namespace QtSharp
             }
             this.typePrinter = this.typePrinter ?? (this.typePrinter = new CSharpTypePrinter(ctx.Context));
             var qualifiedIdentifier = (@class.OriginalClass ?? @class).Visit(this.typePrinter);
-            ctx.Return.Write("ReferenceEquals(__qstring{0}, null) ? new {1}.{2}() : *({1}.{2}*) (__qstring{0}.{3})",
-                             ctx.ParameterIndex, qualifiedIdentifier, Helpers.InternalStruct, Helpers.InstanceIdentifier);
+            ctx.ArgumentPrefix.Write($"*({qualifiedIdentifier}.{Helpers.InternalStruct}*) ");
+            ctx.Return.Write($"(__qstring{ctx.ParameterIndex}.{Helpers.InstanceIdentifier})");
         }
 
         public override void CSharpMarshalToManaged(CSharpMarshalContext ctx)
