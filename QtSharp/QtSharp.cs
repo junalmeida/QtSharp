@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using CppSharp;
 using CppSharp.AST;
@@ -125,7 +121,7 @@ namespace QtSharp
             driver.ParserOptions.TargetTriple = this.qtInfo.Target;
             driver.ParserOptions.UnityBuild = true;
             driver.ParserOptions.SkipPrivateDeclarations = false;
-            driver.ParserOptions.LanguageVersion = CppSharp.Parser.LanguageVersion.CPP23;
+            driver.ParserOptions.LanguageVersion = CppSharp.Parser.LanguageVersion.CPP17;
 
             driver.Options.GeneratorKind = GeneratorKind.CSharp;
             driver.Options.CheckSymbols = true;
@@ -141,6 +137,8 @@ namespace QtSharp
 
             string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             const string qt = "Qt";
+            if (this.qtInfo.LibFiles.Count == 0)
+                throw new Exception("No Qt libraries found");
             foreach (var libFile in this.qtInfo.LibFiles)
             {
                 string qtModule = GetModuleNameFromLibFile(libFile);

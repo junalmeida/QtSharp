@@ -45,13 +45,15 @@ namespace QtSharp.CLI
 
             var qtPaths = new[] { Path.Combine(home, "Qt"), "/usr/include/x86_64-linux-gnu/qt6" };
 
-            return new[] {
-                new QtInfo {
-                    IsSystemPackage = true,
-                    QMake = "/usr/bin/qmake6",
-                    Make = "/usr/bin/make"
-                }
-            }.ToList();
+            if (Platform.IsLinux) // support Qt6 on Linux
+                return new[] {
+                    new QtInfo {
+                        IsSystemPackage = true,
+                        QMake = "/usr/bin/qmake6",
+                        Make = "/usr/bin/make"
+                    }
+                }.ToList();
+
             foreach (var qtPath in qtPaths)
             {
                 if (!Directory.Exists(qtPath))
@@ -179,7 +181,7 @@ namespace QtSharp.CLI
             Stopwatch s = Stopwatch.StartNew();
             var qts = FindQt();
             bool found = qts.Count != 0;
-            bool debug = false;
+            bool debug = true;
             QtInfo qt = null;
 
             if (!found)
@@ -272,7 +274,7 @@ namespace QtSharp.CLI
                            where Regex.IsMatch(file.Name, $@"^libQt\d?\w+\.so\.{major}.*$") && file.LinkTarget == null
                            select file.Name).ToList();
                 //TODO: Remove
-                modules = modules.Where(x => x.Contains("Qt6Core")).ToList();
+                modules = modules.Where(x => x.Contains($"Qt{major}Core")).ToList();
             }
             else
             {
@@ -281,18 +283,18 @@ namespace QtSharp.CLI
                            select file.Name).ToList();
             }
 
-            for (var i = modules.Count - 1; i >= 0; i--)
-            {
-                var module = Path.GetFileNameWithoutExtension(modules[i]);
-                if (debug && module != null && !module.EndsWith("d", StringComparison.Ordinal))
-                {
-                    modules.Remove($"{module}{Path.GetExtension(modules[i])}");
-                }
-                else
-                {
-                    modules.Remove($"{module}d{Path.GetExtension(modules[i])}");
-                }
-            }
+            // for (var i = modules.Count - 1; i >= 0; i--)
+            // {
+            //     var module = Path.GetFileNameWithoutExtension(modules[i]);
+            //     if (debug && module != null && !module.EndsWith("d", StringComparison.Ordinal))
+            //     {
+            //         modules.Remove($"{module}{Path.GetExtension(modules[i])}");
+            //     }
+            //     else
+            //     {
+            //         modules.Remove($"{module}d{Path.GetExtension(modules[i])}");
+            //     }
+            // }
             return modules;
         }
     }
