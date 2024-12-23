@@ -15,9 +15,10 @@ namespace QtSharp
 {
     public class QtSharp : ILibrary
     {
-        public QtSharp(QtInfo qtInfo)
+        public QtSharp(QtInfo qtInfo, bool debug)
         {
             this.qtInfo = qtInfo;
+            this.debug = debug;
         }
 
         public ICollection<KeyValuePair<string, string>> GetVerifiedWrappedModules()
@@ -115,11 +116,17 @@ namespace QtSharp
 
         public void Setup(Driver driver)
         {
+            driver.Options.Verbose = debug;
+            driver.Options.GenerateDebugOutput = debug;
+            driver.ParserOptions.Verbose = debug;
+
             driver.ParserOptions.MicrosoftMode = false;
             driver.ParserOptions.NoBuiltinIncludes = true;
             driver.ParserOptions.TargetTriple = this.qtInfo.Target;
             driver.ParserOptions.UnityBuild = true;
             driver.ParserOptions.SkipPrivateDeclarations = false;
+            driver.ParserOptions.LanguageVersion = CppSharp.Parser.LanguageVersion.CPP23;
+
             driver.Options.GeneratorKind = GeneratorKind.CSharp;
             driver.Options.CheckSymbols = true;
             driver.Options.CompileCode = true;
@@ -128,14 +135,20 @@ namespace QtSharp
             driver.Options.MarshalCharAsManagedChar = true;
             driver.Options.CommentKind = CommentKind.BCPLSlash;
 
+
+            if (Platform.IsLinux)
+                driver.ParserOptions.SetupLinux();
+
             string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             const string qt = "Qt";
             foreach (var libFile in this.qtInfo.LibFiles)
             {
                 string qtModule = GetModuleNameFromLibFile(libFile);
-                var module = driver.Options.AddModule($"{qtModule}.Sharp");
+                var module = driver.Options.AddModule($"QtSharp.{qtModule}");
                 module.Headers.Add(qtModule);
+
                 var moduleName = qtModule.Substring(qt.Length);
+
                 // some Qt modules have their own name-spaces
                 if (moduleName == "Charts" || moduleName == "DataVisualization" ||
                     moduleName.StartsWith("3D", StringComparison.Ordinal))
@@ -168,8 +181,9 @@ namespace QtSharp
                     {
                         module.IncludeDirs.Add(Path.Combine(qtInfo.Headers, "QtUiPlugin"));
                     }
+
                 }
-                if (moduleName == "Designer")
+                if (moduleName == "Designer" && Directory.Exists(module.IncludeDirs.Last()))
                 {
                     foreach (var header in Directory.EnumerateFiles(module.IncludeDirs.Last(), "*.h"))
                     {
@@ -179,15 +193,23 @@ namespace QtSharp
                 module.Libraries.Add(libFile);
                 if (moduleName == "Core")
                 {
-                    module.Headers.Insert(0, "guiddef.h");
+                    if (Platform.IsWindows)
+                        module.Headers.Insert(0, "guiddef.h");
                     module.CodeFiles.Add(Path.Combine(dir, "QObject.cs"));
                     module.CodeFiles.Add(Path.Combine(dir, "QEvent.cs"));
+                }
+
+                module.LibraryDirs.Add(Platform.IsWindows ? qtInfo.Bins : qtInfo.Libs);
+
+                if (module.IncludeDirs.Count == 0)
+                {
+                    driver.Options.Modules.Remove(module);
                 }
             }
 
             foreach (var systemIncludeDir in this.qtInfo.SystemIncludeDirs)
                 driver.ParserOptions.AddSystemIncludeDirs(systemIncludeDir);
-            
+
             if (Platform.IsMacOS)
             {
                 foreach (var frameworkDir in this.qtInfo.FrameworkDirs)
@@ -195,19 +217,21 @@ namespace QtSharp
                 driver.ParserOptions.AddArguments($"-F{qtInfo.Libs}");
             }
 
-            driver.ParserOptions.AddIncludeDirs(qtInfo.Headers);
-
-            driver.ParserOptions.AddLibraryDirs(Platform.IsWindows ? qtInfo.Bins : qtInfo.Libs);
+            driver.ParserOptions.AddIncludeDirs(this.qtInfo.Headers);
         }
 
         public static string GetModuleNameFromLibFile(string libFile)
         {
             var qtModule = Path.GetFileNameWithoutExtension(libFile);
-            if (Platform.IsWindows)
-            {
+            if (qtModule.StartsWith("lib"))
+                qtModule = qtModule.Substring("lib".Length);
+            while (qtModule.Contains("."))
+                qtModule = Path.GetFileNameWithoutExtension(qtModule);
+
+            if (int.TryParse(qtModule[2].ToString(), out var _))
                 return "Qt" + qtModule.Substring("Qt".Length + 1);
-            }
-            return libFile.Substring("lib".Length);
+            else
+                return qtModule;
         }
 
         public void SetupPasses(Driver driver)
@@ -291,6 +315,7 @@ namespace QtSharp
         }
 
         private readonly QtInfo qtInfo;
+        private readonly bool debug;
         private List<KeyValuePair<string, string>> wrappedModules = new List<KeyValuePair<string, string>>();
     }
 }

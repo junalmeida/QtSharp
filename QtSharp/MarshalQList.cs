@@ -2,7 +2,7 @@
 {
     public struct QList
     {
-        public QListData.Internal d;
+        //public QListData.Internal d;
 
         #region WRITE
 
@@ -21,84 +21,84 @@
         // 8. Reimplement append.
 
         //        template <typename T>
-//Q_OUTOFLINE_TEMPLATE void QList<T>::append(const T &t)
-//{
-//    if (d->ref.isShared()) {
-//        Node *n = detach_helper_grow(INT_MAX, 1);
-//        QT_TRY {
-//            node_construct(n, t);
-//        } QT_CATCH(...) {
-//            --d->end;
-//            QT_RETHROW;
-//        }
-//    } else {
-//        if (QTypeInfo<T>::isLarge || QTypeInfo<T>::isStatic) {
-//            Node *n = reinterpret_cast<Node *>(p.append());
-//            QT_TRY {
-//                node_construct(n, t);
-//            } QT_CATCH(...) {
-//                --d->end;
-//                QT_RETHROW;
-//            }
-//        } else {
-//            Node *n, copy;
-//            node_construct(&copy, t); // t might be a reference to an object in the array
-//            QT_TRY {
-//                n = reinterpret_cast<Node *>(p.append());;
-//            } QT_CATCH(...) {
-//                node_destruct(&copy);
-//                QT_RETHROW;
-//            }
-//            *n = copy;
-//        }
-//    }
-//}
+        //Q_OUTOFLINE_TEMPLATE void QList<T>::append(const T &t)
+        //{
+        //    if (d->ref.isShared()) {
+        //        Node *n = detach_helper_grow(INT_MAX, 1);
+        //        QT_TRY {
+        //            node_construct(n, t);
+        //        } QT_CATCH(...) {
+        //            --d->end;
+        //            QT_RETHROW;
+        //        }
+        //    } else {
+        //        if (QTypeInfo<T>::isLarge || QTypeInfo<T>::isStatic) {
+        //            Node *n = reinterpret_cast<Node *>(p.append());
+        //            QT_TRY {
+        //                node_construct(n, t);
+        //            } QT_CATCH(...) {
+        //                --d->end;
+        //                QT_RETHROW;
+        //            }
+        //        } else {
+        //            Node *n, copy;
+        //            node_construct(&copy, t); // t might be a reference to an object in the array
+        //            QT_TRY {
+        //                n = reinterpret_cast<Node *>(p.append());;
+        //            } QT_CATCH(...) {
+        //                node_destruct(&copy);
+        //                QT_RETHROW;
+        //            }
+        //            *n = copy;
+        //        }
+        //    }
+        //}
 
-//        template <typename T>
-//Q_OUTOFLINE_TEMPLATE typename QList<T>::Node *QList<T>::detach_helper_grow(int i, int c)
-//{
-//    Node *n = reinterpret_cast<Node *>(p.begin());
-//    QListData::Data *x = p.detach_grow(&i, c);
-//    QT_TRY {
-//        node_copy(reinterpret_cast<Node *>(p.begin()),
-//                  reinterpret_cast<Node *>(p.begin() + i), n);
-//    } QT_CATCH(...) {
-//        p.dispose();
-//        d = x;
-//        QT_RETHROW;
-//    }
-//    QT_TRY {
-//        node_copy(reinterpret_cast<Node *>(p.begin() + i + c),
-//                  reinterpret_cast<Node *>(p.end()), n + i);
-//    } QT_CATCH(...) {
-//        node_destruct(reinterpret_cast<Node *>(p.begin()),
-//                      reinterpret_cast<Node *>(p.begin() + i));
-//        p.dispose();
-//        d = x;
-//        QT_RETHROW;
-//    }
+        //        template <typename T>
+        //Q_OUTOFLINE_TEMPLATE typename QList<T>::Node *QList<T>::detach_helper_grow(int i, int c)
+        //{
+        //    Node *n = reinterpret_cast<Node *>(p.begin());
+        //    QListData::Data *x = p.detach_grow(&i, c);
+        //    QT_TRY {
+        //        node_copy(reinterpret_cast<Node *>(p.begin()),
+        //                  reinterpret_cast<Node *>(p.begin() + i), n);
+        //    } QT_CATCH(...) {
+        //        p.dispose();
+        //        d = x;
+        //        QT_RETHROW;
+        //    }
+        //    QT_TRY {
+        //        node_copy(reinterpret_cast<Node *>(p.begin() + i + c),
+        //                  reinterpret_cast<Node *>(p.end()), n + i);
+        //    } QT_CATCH(...) {
+        //        node_destruct(reinterpret_cast<Node *>(p.begin()),
+        //                      reinterpret_cast<Node *>(p.begin() + i));
+        //        p.dispose();
+        //        d = x;
+        //        QT_RETHROW;
+        //    }
 
-//    if (!x->ref.deref())
-//        dealloc(x);
+        //    if (!x->ref.deref())
+        //        dealloc(x);
 
-//    return reinterpret_cast<Node *>(p.begin() + i);
-//}
+        //    return reinterpret_cast<Node *>(p.begin() + i);
+        //}
 
-//        template <typename T>
-//Q_INLINE_TEMPLATE void QList<T>::node_construct(Node *n, const T &t)
-//{
-//    if (QTypeInfo<T>::isLarge || QTypeInfo<T>::isStatic) n->v = new T(t);
-//    else if (QTypeInfo<T>::isComplex) new (n) T(t);
-//#if (defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__IBMCPP__)) && !defined(__OPTIMIZE__)
-//    // This violates pointer aliasing rules, but it is known to be safe (and silent)
-//    // in unoptimized GCC builds (-fno-strict-aliasing). The other compilers which
-//    // set the same define are assumed to be safe.
-//    else *reinterpret_cast<T*>(n) = t;
-//#else
-//    // This is always safe, but penaltizes unoptimized builds a lot.
-//    else ::memcpy(n, static_cast<const void *>(&t), sizeof(T));
-//#endif
-//}
+        //        template <typename T>
+        //Q_INLINE_TEMPLATE void QList<T>::node_construct(Node *n, const T &t)
+        //{
+        //    if (QTypeInfo<T>::isLarge || QTypeInfo<T>::isStatic) n->v = new T(t);
+        //    else if (QTypeInfo<T>::isComplex) new (n) T(t);
+        //#if (defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__IBMCPP__)) && !defined(__OPTIMIZE__)
+        //    // This violates pointer aliasing rules, but it is known to be safe (and silent)
+        //    // in unoptimized GCC builds (-fno-strict-aliasing). The other compilers which
+        //    // set the same define are assumed to be safe.
+        //    else *reinterpret_cast<T*>(n) = t;
+        //#else
+        //    // This is always safe, but penaltizes unoptimized builds a lot.
+        //    else ::memcpy(n, static_cast<const void *>(&t), sizeof(T));
+        //#endif
+        //}
 
         #endregion
     }

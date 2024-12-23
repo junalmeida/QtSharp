@@ -17,5 +17,6 @@ namespace QtSharp
         public IList<string> LibFiles;
         public IEnumerable<string> SystemIncludeDirs;
         public IEnumerable<string> FrameworkDirs;
+        public bool IsSystemPackage;
     }
 }

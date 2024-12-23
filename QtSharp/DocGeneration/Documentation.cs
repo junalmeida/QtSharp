@@ -6,13 +6,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Util;
 using System.Xml;
+using ComponentAce.Compression.Libs.zlib;
 using CppSharp;
 using CppSharp.AST;
 using CppSharp.Generators;
 using CppSharp.Generators.CSharp;
 using HtmlAgilityPack;
-using Mono.Data.Sqlite;
-using zlib;
+using Microsoft.Data.Sqlite;
 using Attribute = CppSharp.AST.Attribute;
 
 namespace QtSharp.DocGeneration
@@ -100,15 +100,15 @@ namespace QtSharp.DocGeneration
         private static FunctionDocIndexNode GetFunctionDocumentationNode(XmlReader xmlReader)
         {
             var functionDocumentationNode = new FunctionDocIndexNode
-                                            {
-                                                Name = xmlReader.GetAttribute("name"),
-                                                FullName = xmlReader.GetAttribute("fullname"),
-                                                Access = xmlReader.GetAttribute("access"),
-                                                Location = xmlReader.GetAttribute("location"),
-                                                LineNumber = int.Parse(xmlReader.GetAttribute("lineno")),
-                                                HRef = xmlReader.GetAttribute("href"),
-                                                IsObsolete = xmlReader.GetAttribute("status") == "obsolete"
-                                            };
+            {
+                Name = xmlReader.GetAttribute("name"),
+                FullName = xmlReader.GetAttribute("fullname"),
+                Access = xmlReader.GetAttribute("access"),
+                Location = xmlReader.GetAttribute("location"),
+                LineNumber = int.Parse(xmlReader.GetAttribute("lineno")),
+                HRef = xmlReader.GetAttribute("href"),
+                IsObsolete = xmlReader.GetAttribute("status") == "obsolete"
+            };
             using (var xmlSubReader = xmlReader.ReadSubtree())
             {
                 while (xmlSubReader.Read())
@@ -125,26 +125,26 @@ namespace QtSharp.DocGeneration
         private static FullNameDocIndexNode GetFullNameDocumentationNode(XmlReader xmlReader)
         {
             return new FullNameDocIndexNode
-                   {
-                       Name = xmlReader.GetAttribute("name"),
-                       FullName = xmlReader.GetAttribute("fullname"),
-                       Location = xmlReader.GetAttribute("location"),
-                       LineNumber = int.Parse(xmlReader.GetAttribute("lineno")),
-                       HRef = xmlReader.GetAttribute("href"),
-                       IsObsolete = xmlReader.GetAttribute("status") == "obsolete"
-                   };
+            {
+                Name = xmlReader.GetAttribute("name"),
+                FullName = xmlReader.GetAttribute("fullname"),
+                Location = xmlReader.GetAttribute("location"),
+                LineNumber = int.Parse(xmlReader.GetAttribute("lineno")),
+                HRef = xmlReader.GetAttribute("href"),
+                IsObsolete = xmlReader.GetAttribute("status") == "obsolete"
+            };
         }
 
         private static DocIndexNode GetDocumentationNode(XmlReader xmlReader)
         {
             return new DocIndexNode
-                   {
-                       Name = xmlReader.GetAttribute("name"),
-                       Location = xmlReader.GetAttribute("location"),
-                       LineNumber = int.Parse(xmlReader.GetAttribute("lineno")),
-                       HRef = xmlReader.GetAttribute("href"),
-                       IsObsolete = xmlReader.GetAttribute("status") == "obsolete"
-                   };
+            {
+                Name = xmlReader.GetAttribute("name"),
+                Location = xmlReader.GetAttribute("location"),
+                LineNumber = int.Parse(xmlReader.GetAttribute("lineno")),
+                HRef = xmlReader.GetAttribute("href"),
+                IsObsolete = xmlReader.GetAttribute("status") == "obsolete"
+            };
         }
 
         public bool Exists { get; set; }
@@ -345,7 +345,7 @@ namespace QtSharp.DocGeneration
                             used.Add(@params[i].Name = param);
                             if (function.IsDependent && function is Method && function.Namespace.IsDependent)
                             {
-                                foreach (var specialization in ((Class) function.Namespace).Specializations)
+                                foreach (var specialization in ((Class)function.Namespace).Specializations)
                                 {
                                     var specializedFunction = specialization.Methods.FirstOrDefault(m => m.InstantiatedFrom == function);
                                     if (specializedFunction != null)
@@ -430,7 +430,7 @@ namespace QtSharp.DocGeneration
                     case '[':
                     case ']':
                         idBuilder.Append('-');
-                        idBuilder.Append(((int) c).ToString("x"));
+                        idBuilder.Append(((int)c).ToString("x"));
                         break;
                     default:
                         idBuilder.Append(c);
@@ -447,16 +447,16 @@ namespace QtSharp.DocGeneration
             var properties = expansions.Where(e => e.Text.Contains("Q_PROPERTY") || e.Text.Contains("QDOC_PROPERTY"));
             string alternativeName = property.OriginalName.Length == 1 ? property.OriginalName :
                                      "is" + StringHelpers.Capitalize(property.OriginalName);
-	        foreach (var macroExpansion in properties)
-	        {
-		        var name = macroExpansion.Text.Split(' ')[1];
-		        if (name == property.OriginalName || name == alternativeName)
-		        {
+            foreach (var macroExpansion in properties)
+            {
+                var name = macroExpansion.Text.Split(' ')[1];
+                if (name == property.OriginalName || name == alternativeName)
+                {
                     property.OriginalName = name;
-					this.DocumentQtProperty(property);
-					return;
-		        }
-	        }
+                    this.DocumentQtProperty(property);
+                    return;
+                }
+            }
             if (property.Field == null)
             {
                 var comment = new RawComment();
@@ -480,7 +480,7 @@ namespace QtSharp.DocGeneration
                     {
                         if (property.IsOverride)
                         {
-                            Property baseProperty = ((Class) property.Namespace).GetBaseProperty(property);
+                            Property baseProperty = ((Class)property.Namespace).GetBaseProperty(property);
                             if (baseProperty.Comment != null)
                             {
                                 comment.BriefText = baseProperty.Comment.BriefText;
@@ -515,30 +515,30 @@ namespace QtSharp.DocGeneration
             {
                 return;
             }
-            var qualifiedName = property.GetQualifiedName(decl => decl.OriginalName, decl => decl.Namespace);
+            var qualifiedName = property.GetQualifiedName(decl => decl.OriginalName, decl => decl.Namespace, false);
             var node = this.propertyNodes[property.OriginalName].Find(c => c.FullName == qualifiedName);
-	        if (node != null && node.HRef != null)
-			{
-				var link = node.HRef.Split('#');
-				var file = link[0];
-		        if (this.membersDocumentation.ContainsKey(file))
-		        {
-		            var typeDocs = this.membersDocumentation[file];
+            if (node != null && node.HRef != null)
+            {
+                var link = node.HRef.Split('#');
+                var file = link[0];
+                if (this.membersDocumentation.ContainsKey(file))
+                {
+                    var typeDocs = this.membersDocumentation[file];
                     var key = $"{property.OriginalName}-prop";
-		            var containsKey = typeDocs.ContainsKey(key);
-		            if (!containsKey)
-		            {
-		                key = property.OriginalName;
-		                containsKey = typeDocs.ContainsKey(key);
-		            }
+                    var containsKey = typeDocs.ContainsKey(key);
+                    if (!containsKey)
+                    {
+                        key = property.OriginalName;
+                        containsKey = typeDocs.ContainsKey(key);
+                    }
                     if (containsKey)
-		            {
-		                var docs = typeDocs[key];
-		                var start = docs.FindIndex(n => n.InnerText == "Access functions:");
+                    {
+                        var docs = typeDocs[key];
+                        var start = docs.FindIndex(n => n.InnerText == "Access functions:");
                         start = start >= 0 ? start : docs.FindIndex(n => n.InnerText == "Notifier signal:");
-		                var end = docs.FindLastIndex(n => n.Name == "div");
-		                if (start >= 0 && end >= 0)
-		                {
+                        var end = docs.FindLastIndex(n => n.Name == "div");
+                        if (start >= 0 && end >= 0)
+                        {
                             for (var i = end; i >= start; i--)
                             {
                                 docs.RemoveAt(i);
@@ -546,13 +546,13 @@ namespace QtSharp.DocGeneration
                             if (string.IsNullOrWhiteSpace(docs[start - 1].OuterHtml))
                             {
                                 docs.RemoveAt(start - 1);
-                            }   
-		                }
-		                var text = ConstructDocumentText(docs.Skip(1));
-		                property.Comment = new RawComment { BriefText = StripTags(text) };
-		            }
-		        }
-	        }
+                            }
+                        }
+                        var text = ConstructDocumentText(docs.Skip(1));
+                        property.Comment = new RawComment { BriefText = StripTags(text) };
+                    }
+                }
+            }
         }
 
         public void DocumentType(Class type)
@@ -637,7 +637,7 @@ namespace QtSharp.DocGeneration
                                     enumMemberDocs = enumMembersDocs.SkipWhile(n => n != enumMemberDocs).FirstOrDefault(n => n.Name == "p");
                                     if (enumMemberDocs != null)
                                     {
-                                        item.Comment = new RawComment { BriefText = enumMemberDocs.InnerText };                                        
+                                        item.Comment = new RawComment { BriefText = enumMemberDocs.InnerText };
                                     }
                                 }
                             }
@@ -728,7 +728,7 @@ namespace QtSharp.DocGeneration
                         while (sqliteDataReader.Read())
                         {
                             byte[] blob = new byte[ushort.MaxValue];
-                            var length = (int) sqliteDataReader.GetBytes(1, 0, blob, 0, blob.Length);
+                            var length = (int)sqliteDataReader.GetBytes(1, 0, blob, 0, blob.Length);
                             using (var output = new MemoryStream(length - 4))
                             {
                                 using (var zOutputStream = new ZOutputStream(output))
@@ -828,10 +828,10 @@ namespace QtSharp.DocGeneration
             obsoleteMessageBuilder.Append(HtmlEncoder.HtmlDecode(HtmlEncoder.HtmlEncode(function.Comment.BriefText).Split(
                 Environment.NewLine.ToCharArray()).FirstOrDefault(line => line.Contains("instead") || line.Contains("deprecated"))));
             function.Attributes.Add(new Attribute
-                                    {
-                                        Type = typeof(ObsoleteAttribute),
-                                        Value = $"\"{obsoleteMessageBuilder}\""
-                                    });
+            {
+                Type = typeof(ObsoleteAttribute),
+                Value = $"\"{obsoleteMessageBuilder}\""
+            });
         }
 
         private readonly Dictionary<string, List<DocumentationNode>> typesDocumentation = new Dictionary<string, List<DocumentationNode>>();

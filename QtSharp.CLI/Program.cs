@@ -14,31 +14,26 @@ namespace QtSharp.CLI
     {
         static int ParseArgs(string[] args, out string qmake, out string make, out bool debug)
         {
+            // TODO: Replace with a proper command line parser.
             qmake = null;
             make = null;
             debug = false;
 
-            if (args.Length < 2)
-            {
-               Console.WriteLine("Please enter the paths to qmake and make.");
-               return 1;
-            }
-
-            qmake = args [0];
+            qmake = "qmake";
             if (!File.Exists(qmake))
             {
                 Console.WriteLine("The specified qmake does not exist.");
                 return 1;
             }
 
-            make = args [1];
+            make = "make";
             if (!File.Exists(make))
             {
-               Console.WriteLine("The specified make does not exist.");
-               return 1;
+                Console.WriteLine("The specified make does not exist.");
+                return 1;
             }
 
-            debug = args.Length > 2 && (args[2] == "d" || args[2] == "debug");
+            debug = true;
 
             return 0;
         }
@@ -48,25 +43,34 @@ namespace QtSharp.CLI
             var home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             var qts = new List<QtInfo>();
 
-            var qtPath = Path.Combine(home, "Qt");
-            if (!Directory.Exists(qtPath))
-            {
-                return new List<QtInfo>();
-            }
+            var qtPaths = new[] { Path.Combine(home, "Qt"), "/usr/include/x86_64-linux-gnu/qt6" };
 
-            foreach (var path in Directory.EnumerateDirectories(qtPath))
+            return new[] {
+                new QtInfo {
+                    IsSystemPackage = true,
+                    QMake = "/usr/bin/qmake6",
+                    Make = "/usr/bin/make"
+                }
+            }.ToList();
+            foreach (var qtPath in qtPaths)
             {
-                var dir = Path.GetFileName(path);
-                bool isNumber = dir.All(c => char.IsDigit(c) || c == '.');
-                if (!isNumber)
+                if (!Directory.Exists(qtPath))
                     continue;
-                var qt = new QtInfo { Path = path };
-                var match = Regex.Match(dir, @"([0-9]+)\.([0-9]+)");
-                if (!match.Success)
-                    continue;
-                qt.MajorVersion = int.Parse(match.Groups[1].Value);
-                qt.MinorVersion = int.Parse(match.Groups[2].Value);
-                qts.Add(qt);
+
+                foreach (var path in Directory.EnumerateDirectories(qtPath))
+                {
+                    var dir = Path.GetFileName(path);
+                    bool isNumber = dir.All(c => char.IsDigit(c) || c == '.');
+                    if (!isNumber)
+                        continue;
+                    var qt = new QtInfo { Path = path };
+                    var match = Regex.Match(dir, @"([0-9]+)\.([0-9]+)");
+                    if (!match.Success)
+                        continue;
+                    qt.MajorVersion = int.Parse(match.Groups[1].Value);
+                    qt.MinorVersion = int.Parse(match.Groups[2].Value);
+                    qts.Add(qt);
+                }
             }
 
             return qts;
@@ -75,21 +79,39 @@ namespace QtSharp.CLI
         static bool QueryQt(QtInfo qt, bool debug)
         {
             // check for OS X
-            if (string.IsNullOrWhiteSpace(qt.QMake))
+            if (!qt.IsSystemPackage)
             {
-                qt.QMake = Path.Combine(qt.Path, "clang_64/bin/qmake");
-            }
-            if (string.IsNullOrWhiteSpace(qt.Make))
-            {
-                qt.Make = "/usr/bin/make";
-            }
+                if (string.IsNullOrWhiteSpace(qt.QMake))
+                {
+                    var osx = Path.Combine(qt.Path, "clang_64/bin/qmake");
+                    if (File.Exists(osx))
+                    {
+                        qt.QMake = osx;
+                    }
+                }
+                if (string.IsNullOrWhiteSpace(qt.Make))
+                {
+                    qt.Make = "/usr/bin/make";
+                }
 
-            string path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Machine);
-            path = Path.GetDirectoryName(qt.Make) + Path.PathSeparator + path;
-            Environment.SetEnvironmentVariable("Path", path, EnvironmentVariableTarget.Process);
+                string path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Machine);
+                path = Path.GetDirectoryName(qt.Make) + Path.PathSeparator + path;
+                Environment.SetEnvironmentVariable("Path", path, EnvironmentVariableTarget.Process);
+            }
 
             int error;
             string errorMessage;
+
+
+            System.Version.TryParse(ProcessHelper.Run(qt.QMake, "-query QT_VERSION", out error, out errorMessage), out var version);
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                Console.WriteLine(errorMessage);
+                return false;
+            }
+            qt.MajorVersion = version.Major;
+            qt.MinorVersion = version.Minor;
+
             qt.Bins = ProcessHelper.Run(qt.QMake, "-query QT_INSTALL_BINS", out error, out errorMessage);
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -112,7 +134,8 @@ namespace QtSharp.CLI
                     libsInfo.Name);
                 return false;
             }
-            qt.LibFiles = GetLibFiles(libsInfo, debug);
+            qt.LibFiles = GetLibFiles(libsInfo, qt.MajorVersion, debug);
+
             qt.Headers = ProcessHelper.Run(qt.QMake, "-query QT_INSTALL_HEADERS", out error, out errorMessage);
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -127,6 +150,7 @@ namespace QtSharp.CLI
                     headersInfo.Name);
                 return false;
             }
+
             qt.Docs = ProcessHelper.Run(qt.QMake, "-query QT_INSTALL_DOCS", out error, out errorMessage);
 
             string emptyFile = Platform.IsWindows ? "NUL" : "/dev/null";
@@ -156,7 +180,7 @@ namespace QtSharp.CLI
             var qts = FindQt();
             bool found = qts.Count != 0;
             bool debug = false;
-            QtInfo qt;
+            QtInfo qt = null;
 
             if (!found)
             {
@@ -169,7 +193,20 @@ namespace QtSharp.CLI
             else
             {
                 // TODO: Only for OSX for now, generalize for all platforms.
-                qt = qts.Last();
+                foreach (var currentQt in qts)
+                {
+                    if (QueryQt(currentQt, debug))
+                    {
+                        qt = currentQt;
+                        break;
+                    }
+                }
+            }
+
+            if (qt == null)
+            {
+                Console.Error.WriteLine("Qt installation not found.");
+                return 1;
             }
 
             bool log = false;
@@ -177,21 +214,18 @@ namespace QtSharp.CLI
             if (logredirect != null)
                 logredirect.CreateLogDirectory();
 
-            if (!QueryQt(qt, debug))
-                return 1;
-
             for (int i = qt.LibFiles.Count - 1; i >= 0; i--)
             {
                 var libFile = qt.LibFiles[i];
                 var libFileName = Path.GetFileNameWithoutExtension(libFile);
                 if (Path.GetExtension(libFile) == ".exe" ||
                     // QtQuickTest is a QML module but has 3 main C++ functions and is not auto-ignored
-                    libFileName == "QtQuickTest" || libFileName == "Qt5QuickTest")
+                    libFileName == "QtQuickTest" || libFileName == "Qt5QuickTest" || libFileName == "Qt6QuickTest")
                 {
                     qt.LibFiles.RemoveAt(i);
                 }
             }
-            var qtSharp = new QtSharp(qt);
+            var qtSharp = new QtSharp(qt, debug);
             ConsoleDriver.Run(qtSharp);
             var wrappedModules = qtSharp.GetVerifiedWrappedModules();
 
@@ -224,20 +258,28 @@ namespace QtSharp.CLI
             return 0;
         }
 
-        private static IList<string> GetLibFiles(DirectoryInfo libsInfo, bool debug)
+        private static IList<string> GetLibFiles(DirectoryInfo libsInfo, int major, bool debug)
         {
             List<string> modules;
-            
+
             if (Platform.IsMacOS)
             {
                 modules = libsInfo.EnumerateDirectories("*.framework").Select(dir => Path.GetFileNameWithoutExtension(dir.Name)).ToList();
+            }
+            else if (Platform.IsLinux)
+            {
+                modules = (from file in libsInfo.EnumerateFiles()
+                           where Regex.IsMatch(file.Name, $@"^libQt\d?\w+\.so\.{major}.*$") && file.LinkTarget == null
+                           select file.Name).ToList();
+                //TODO: Remove
+                modules = modules.Where(x => x.Contains("Qt6Core")).ToList();
             }
             else
             {
                 modules = (from file in libsInfo.EnumerateFiles()
                            where Regex.IsMatch(file.Name, @"^Qt\d?\w+\.\w+$")
                            select file.Name).ToList();
-            }                
+            }
 
             for (var i = modules.Count - 1; i >= 0; i--)
             {

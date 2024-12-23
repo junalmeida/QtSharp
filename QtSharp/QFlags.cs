@@ -3,6 +3,7 @@ using CppSharp.AST;
 using CppSharp.AST.Extensions;
 using CppSharp.Generators.CSharp;
 using CppSharp.Types;
+using Type = CppSharp.AST.Type;
 
 namespace QtSharp
 {
@@ -19,12 +20,10 @@ namespace QtSharp
                 var specializationType = ctx.Type as TemplateSpecializationType;
                 if (specializationType != null)
                 {
-                    return new UnsupportedType($@"{specializationType.Template.Name}<{
-                        string.Join(", ", specializationType.Arguments.Select(a => a.Type.Type))}>");
+                    return new UnsupportedType($@"{specializationType.Template.Name}<{string.Join(", ", specializationType.Arguments.Select(a => a.Type.Type))}>");
                 }
-                var template = (Class) ((TagType) ctx.Type).Declaration;
-                return new UnsupportedType($@"{template.Name}<{
-                    string.Join(", ", template.TemplateParameters.Select(p => p.Name))}>");
+                var template = (Class)((TagType)ctx.Type).Declaration;
+                return new UnsupportedType($@"{template.Name}<{string.Join(", ", template.TemplateParameters.Select(p => p.Name))}>");
             }
             return GetEnumType(ctx.Type);
         }
@@ -61,7 +60,7 @@ namespace QtSharp
             if (templateSpecializationType != null)
                 classTemplateSpecialization = templateSpecializationType.GetClassTemplateSpecialization();
             else
-                classTemplateSpecialization = ((TagType) type).Declaration as ClassTemplateSpecialization;
+                classTemplateSpecialization = ((TagType)type).Declaration as ClassTemplateSpecialization;
             if (classTemplateSpecialization == null)
             {
                 return null;

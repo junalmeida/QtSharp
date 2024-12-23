@@ -3,6 +3,7 @@ using CppSharp.AST.Extensions;
 using CppSharp.Generators;
 using CppSharp.Generators.CSharp;
 using CppSharp.Types;
+using Type = CppSharp.AST.Type;
 
 namespace QtSharp
 {
@@ -13,8 +14,7 @@ namespace QtSharp
         {
             if (ctx.Kind == TypePrinterContextKind.Native)
             {
-                return new CustomType($@"QtCore.QString.{
-                    Helpers.InternalStruct}{(ctx.Type.IsAddress() ? "*" : string.Empty)}");
+                return new CustomType($@"QtCore.QString.{Helpers.InternalStruct}{(ctx.Type.IsAddress() ? "*" : string.Empty)}");
             }
             return new CILType(typeof(string));
         }
@@ -66,8 +66,7 @@ namespace QtSharp
             {
                 cast = $"({templateParameter.Parameter.Name}) (object) ";
             }
-            ctx.Return.Write($@"{cast}Marshal.PtrToStringUni(new IntPtr(QtCore.QString.{
-                                Helpers.CreateInstanceIdentifier}({ctx.ReturnVarName}).Utf16))");
+            ctx.Return.Write($@"{cast}Marshal.PtrToStringUni(new IntPtr(QtCore.QString.{Helpers.CreateInstanceIdentifier}({ctx.ReturnVarName}).Utf16))");
         }
 
         private CSharpTypePrinter typePrinter;
