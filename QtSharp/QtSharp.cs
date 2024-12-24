@@ -131,10 +131,6 @@ namespace QtSharp
             driver.Options.MarshalCharAsManagedChar = true;
             driver.Options.CommentKind = CommentKind.BCPLSlash;
 
-
-            if (Platform.IsLinux)
-                driver.ParserOptions.SetupLinux();
-
             string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             const string qt = "Qt";
             if (this.qtInfo.LibFiles.Count == 0)
@@ -214,7 +210,6 @@ namespace QtSharp
                     driver.ParserOptions.AddArguments($"-F{frameworkDir}");
                 driver.ParserOptions.AddArguments($"-F{qtInfo.Libs}");
             }
-
             driver.ParserOptions.AddIncludeDirs(this.qtInfo.Headers);
         }
 

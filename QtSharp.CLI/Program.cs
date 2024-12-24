@@ -216,17 +216,6 @@ namespace QtSharp.CLI
             if (logredirect != null)
                 logredirect.CreateLogDirectory();
 
-            for (int i = qt.LibFiles.Count - 1; i >= 0; i--)
-            {
-                var libFile = qt.LibFiles[i];
-                var libFileName = Path.GetFileNameWithoutExtension(libFile);
-                if (Path.GetExtension(libFile) == ".exe" ||
-                    // QtQuickTest is a QML module but has 3 main C++ functions and is not auto-ignored
-                    libFileName == "QtQuickTest" || libFileName == "Qt5QuickTest" || libFileName == "Qt6QuickTest")
-                {
-                    qt.LibFiles.RemoveAt(i);
-                }
-            }
             var qtSharp = new QtSharp(qt, debug);
             ConsoleDriver.Run(qtSharp);
             var wrappedModules = qtSharp.GetVerifiedWrappedModules();
@@ -262,40 +251,27 @@ namespace QtSharp.CLI
 
         private static IList<string> GetLibFiles(DirectoryInfo libsInfo, int major, bool debug)
         {
-            List<string> modules;
+            IEnumerable<string> modules;
 
             if (Platform.IsMacOS)
             {
-                modules = libsInfo.EnumerateDirectories("*.framework").Select(dir => Path.GetFileNameWithoutExtension(dir.Name)).ToList();
+                modules = libsInfo.EnumerateDirectories("*.framework").Select(dir => Path.GetFileNameWithoutExtension(dir.Name));
             }
             else if (Platform.IsLinux)
             {
                 modules = (from file in libsInfo.EnumerateFiles()
                            where Regex.IsMatch(file.Name, $@"^libQt\d?\w+\.so\.{major}.*$") && file.LinkTarget == null
-                           select file.Name).ToList();
+                           select file.Name);
                 //TODO: Remove
-                modules = modules.Where(x => x.Contains($"Qt{major}Core")).ToList();
+                modules = modules.Where(x => x.Contains($"Qt{major}Core"));
             }
             else
             {
                 modules = (from file in libsInfo.EnumerateFiles()
                            where Regex.IsMatch(file.Name, @"^Qt\d?\w+\.\w+$")
-                           select file.Name).ToList();
+                           select file.Name);
             }
-
-            // for (var i = modules.Count - 1; i >= 0; i--)
-            // {
-            //     var module = Path.GetFileNameWithoutExtension(modules[i]);
-            //     if (debug && module != null && !module.EndsWith("d", StringComparison.Ordinal))
-            //     {
-            //         modules.Remove($"{module}{Path.GetExtension(modules[i])}");
-            //     }
-            //     else
-            //     {
-            //         modules.Remove($"{module}d{Path.GetExtension(modules[i])}");
-            //     }
-            // }
-            return modules;
+            return modules.Where(x => !x.Contains("QtQuickTest") && !x.Contains($"Qt{major}QuickTest")).ToList();
         }
     }
 }
