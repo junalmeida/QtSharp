@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "process",
+			"command": "dotnet",
+			"args": [
+				"run"
+			],
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}/QtSharp.CLI"
+			},
+			"label": "dotnet: run"
+		}
+	]
+}

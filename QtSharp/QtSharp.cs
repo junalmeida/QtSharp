@@ -118,6 +118,7 @@ namespace QtSharp
 
             driver.ParserOptions.MicrosoftMode = false;
             driver.ParserOptions.NoBuiltinIncludes = true;
+            driver.ParserOptions.NoStandardIncludes = true;
             driver.ParserOptions.TargetTriple = this.qtInfo.Target;
             driver.ParserOptions.UnityBuild = true;
             driver.ParserOptions.SkipPrivateDeclarations = false;

@@ -22,14 +22,14 @@ namespace QtSharp.CLI
             qmake = "qmake";
             if (!File.Exists(qmake))
             {
-                Console.WriteLine("The specified qmake does not exist.");
+                Console.Error.WriteLine("The specified qmake does not exist.");
                 return 1;
             }
 
             make = "make";
             if (!File.Exists(make))
             {
-                Console.WriteLine("The specified make does not exist.");
+                Console.Error.WriteLine("The specified make does not exist.");
                 return 1;
             }
 
@@ -40,12 +40,8 @@ namespace QtSharp.CLI
 
         static List<QtInfo> FindQt()
         {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-            var qts = new List<QtInfo>();
-
-            var qtPaths = new[] { Path.Combine(home, "Qt"), "/usr/include/x86_64-linux-gnu/qt6" };
-
-            if (Platform.IsLinux) // support Qt6 on Linux
+            if (Platform.IsLinux && File.Exists("/usr/bin/qmake6")) // support system Qt6 on Linux 
+            {
                 return new[] {
                     new QtInfo {
                         IsSystemPackage = true,
@@ -53,7 +49,14 @@ namespace QtSharp.CLI
                         Make = "/usr/bin/make"
                     }
                 }.ToList();
+            }
+            // TODO: System QT6 on macosx and windows
 
+
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            var qts = new List<QtInfo>();
+
+            var qtPaths = new[] { Path.Combine(home, "Qt") };
             foreach (var qtPath in qtPaths)
             {
                 if (!Directory.Exists(qtPath))
@@ -194,7 +197,6 @@ namespace QtSharp.CLI
             }
             else
             {
-                // TODO: Only for OSX for now, generalize for all platforms.
                 foreach (var currentQt in qts)
                 {
                     if (QueryQt(currentQt, debug))
@@ -217,7 +219,18 @@ namespace QtSharp.CLI
                 logredirect.CreateLogDirectory();
 
             var qtSharp = new QtSharp(qt, debug);
+            Console.WriteLine("Qt version: {0}.{1}", qt.MajorVersion, qt.MinorVersion);
+            Console.WriteLine("Qt bins: {0}", qt.Bins);
+            Console.WriteLine("Qt libs: {0}", qt.Libs);
+            Console.WriteLine("Qt headers: {0}", qt.Headers);
+            Console.WriteLine("Qt lib files: {0}", string.Join(", ", qt.LibFiles));
+
+            Console.WriteLine("Press any key to start generating bindings.");
+            Console.ReadKey();
+
+            Console.WriteLine("Generating bindings...");
             ConsoleDriver.Run(qtSharp);
+
             var wrappedModules = qtSharp.GetVerifiedWrappedModules();
 
             if (wrappedModules.Count == 0)
@@ -226,6 +239,7 @@ namespace QtSharp.CLI
                 return 1;
             }
 
+            // TODO: Replace this with a nuget package
             const string qtSharpZip = "QtSharp.zip";
             if (File.Exists(qtSharpZip))
             {
@@ -262,7 +276,7 @@ namespace QtSharp.CLI
                 modules = (from file in libsInfo.EnumerateFiles()
                            where Regex.IsMatch(file.Name, $@"^libQt\d?\w+\.so\.{major}.*$") && file.LinkTarget == null
                            select file.Name);
-                //TODO: Remove
+                //TODO: Remove to do all libs. Currently testig with only QtCore
                 modules = modules.Where(x => x.Contains($"Qt{major}Core"));
             }
             else

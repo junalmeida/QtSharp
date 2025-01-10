@@ -9,6 +9,26 @@
             "type": "dotnet",
             "request": "launch",
             "projectPath": "${workspaceFolder}/QtSharp.CLI/QtSharp.CLI.csproj",
-        }
+        },
+        {
+            "name": "(gdb) Attach",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/QtSharp.CLI/bin/Debug/net8.0/QtSharp.CLI",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "dotnet: run"
+        },
     ]
 }
